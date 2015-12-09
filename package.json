@@ -20,7 +20,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "bitcore": "git://github.com/creditbit/creditbitcore-lib.git",
-    "bitcore-wallet-utils": "git://github.com/creditbit/leo-creditbitcore-wallet-utils.git",
+    "bitcore-wallet-utils": "git://github.com/creditbit/creditbitcore-wallet-utils.git",
     "body-parser": "^1.11.0",
     "coveralls": "^2.11.2",
     "email-validator": "^1.0.1",
