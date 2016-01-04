@@ -4,26 +4,48 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var TXP = require('../../lib/model/txproposal');
+var TxProposal = require('../../lib/model/txproposal');
 var Bitcore = require('bitcore-wallet-utils').Bitcore;
-
+var WalletUtils = require('bitcore-wallet-utils');
 
 describe('TXProposal', function() {
 
-  describe('#fromObj', function() {
-    it('should create a TXP', function() {
-      var txp = TXP.fromObj(aTXP());
+  describe('#create', function() {
+    it('should create a TxProposal', function() {
+      var txp = TxProposal.create(aTxpOpts());
       should.exist(txp);
+      should.exist(txp.toAddress);
+      should.not.exist(txp.outputs);
+    });
+    it('should create a multiple-outputs TxProposal', function() {
+      var txp = TxProposal.create(aTxpOpts(TxProposal.Types.MULTIPLEOUTPUTS));
+      should.exist(txp);
+      should.not.exist(txp.toAddress);
+      should.exist(txp.outputs);
     });
   });
-  describe('#_getBitcoreTx', function() {
+
+  describe('#fromObj', function() {
+    it('should copy a TxProposal', function() {
+      var txp = TxProposal.fromObj(aTXP());
+      should.exist(txp);
+      txp.toAddress.should.equal(aTXP().toAddress);
+    });
+    it('should copy a multiple-outputs TxProposal', function() {
+      var txp = TxProposal.fromObj(aTXP(TxProposal.Types.MULTIPLEOUTPUTS));
+      should.exist(txp);
+      txp.outputs.should.deep.equal(aTXP(TxProposal.Types.MULTIPLEOUTPUTS).outputs);
+    });
+  });
+
+  describe('#getBitcoreTx', function() {
     it('should create a valid bitcore TX', function() {
-      var txp = TXP.fromObj(aTXP());
+      var txp = TxProposal.fromObj(aTXP());
       var t = txp.getBitcoreTx();
       should.exist(t);
     });
-    it('should order ouputs as specified by outputOrder', function() {
-      var txp = TXP.fromObj(aTXP());
+    it('should order outputs as specified by outputOrder', function() {
+      var txp = TxProposal.fromObj(aTXP());
 
       txp.outputOrder = [0, 1];
       var t = txp.getBitcoreTx();
@@ -33,12 +55,33 @@ describe('TXProposal', function() {
       var t = txp.getBitcoreTx();
       t.getChangeOutput().should.deep.equal(t.outputs[0]);
     });
+    it('should create a bitcore TX with multiple outputs', function() {
+      var txp = TxProposal.fromObj(aTXP(TxProposal.Types.MULTIPLEOUTPUTS));
+      txp.outputOrder = [0, 1, 2];
+      var t = txp.getBitcoreTx();
+      t.getChangeOutput().should.deep.equal(t.outputs[2]);
+    });
   });
 
+  describe('#getTotalAmount', function() {
+    it('should be compatible with simple proposal legacy amount', function() {
+      var x = TxProposal.fromObj(aTXP());
+      var total = x.getTotalAmount();
+      total.should.equal(x.amount);
+    });
+    it('should handle multiple-outputs', function() {
+      var x = TxProposal.fromObj(aTXP(TxProposal.Types.MULTIPLEOUTPUTS));
+      var totalOutput = 0;
+      _.each(x.outputs, function(o) {
+        totalOutput += o.amount
+      });
+      x.getTotalAmount().should.equal(totalOutput);
+    });
+  });
 
   describe('#sign', function() {
     it('should sign 2-2', function() {
-      var txp = TXP.fromObj(aTXP());
+      var txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(false);
@@ -50,7 +93,7 @@ describe('TXProposal', function() {
 
   describe('#getRawTx', function() {
     it('should generate correct raw transaction for signed 2-2', function() {
-      var txp = TXP.fromObj(aTXP());
+      var txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.getRawTx().should.equal('0100000001ab069f7073be9b491bb1ad4233a45d2e383082ccc7206df905662d6d8499e66e080000009200483045022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9014752210319008ffe1b3e208f5ebed8f46495c056763f87b07930a7027a92ee477fb0cb0f2103b5f035af8be40d0db5abb306b7754949ab39032cf99ad177691753b37d10130152aeffffffff0280f0fa02000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac70c9fa020000000017a914778192003f0e9e1d865c082179cc3dae5464b03d8700000000');
     });
@@ -60,7 +103,7 @@ describe('TXProposal', function() {
 
   describe('#reject', function() {
     it('should reject 2-2', function() {
-      var txp = TXP.fromObj(aTXP());
+      var txp = TxProposal.fromObj(aTXP());
       txp.reject('1');
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(true);
@@ -70,7 +113,7 @@ describe('TXProposal', function() {
 
   describe('#reject & #sign', function() {
     it('should finally reject', function() {
-      var txp = TXP.fromObj(aTXP());
+      var txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures);
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(false);
@@ -86,9 +129,33 @@ var theXPriv = 'xprv9s21ZrQH143K2rMHbXTJmWTuFx6ssqn1vyRoZqPkCXYchBSkp5ey8kMJe84s
 var theXPub = 'xpub661MyMwAqRbcFLRkhYzK8eQdoywNHJVsJCMQNDoMks5bZymuMcyDgYfnVQYq2Q9npnVmdTAthYGc3N3uxm5sEdnTpSqBc4YYTAhNnoSxCm9';
 var theSignatures = ['3045022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9'];
 
-var aTXP = function() {
-  return {
-    "version": "1.0.0",
+var aTxpOpts = function(type) {
+  var opts = {
+    type: type,
+    toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+    amount: 50000000,
+    message: 'some message'
+  };
+  if (type == TxProposal.Types.MULTIPLEOUTPUTS) {
+    opts.outputs = [{
+      toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+      amount: 10000000,
+      message: "first message"
+    }, {
+      toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+      amount: 20000000,
+      message: "second message"
+    }, ];
+    delete opts.toAddress;
+    delete opts.amount;
+  }
+  return opts;
+};
+
+var aTXP = function(type) {
+  var txp = {
+    "version": '2.0.0',
+    "type": type,
     "createdOn": 1423146231,
     "id": "75c34f49-1ed6-255f-e9fd-0c71ae75ed1e",
     "walletId": "1",
@@ -120,8 +187,25 @@ var aTXP = function() {
     "inputPaths": ["m/2147483647/0/1"],
     "requiredSignatures": 2,
     "requiredRejections": 1,
+    "walletN": 2,
     "status": "pending",
     "actions": [],
     "outputOrder": [0, 1],
+    "fee": 10000,
+  };
+  if (type == TxProposal.Types.MULTIPLEOUTPUTS) {
+    txp.outputs = [{
+      toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+      amount: 10000000,
+      message: "first message"
+    }, {
+      toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+      amount: 20000000,
+      message: "second message"
+    }, ];
+    txp.outputOrder = [0, 1, 2];
+    delete txp.toAddress;
+    delete txp.amount;
   }
+  return txp;
 };

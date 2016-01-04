@@ -2,7 +2,7 @@
   "name": "creditbitcore-wallet-service",
   "description": "A service for Mutisig HD creditbit Wallets",
   "author": "Creditbit",
-  "version": "0.0.33",
+  "version": "0.1.1",
   "keywords": [
     "creditbit",
     "copay",
@@ -28,7 +28,7 @@
     "inherits": "^2.0.1",
     "locker": "^0.1.0",
     "locker-server": "^0.1.3",
-    "lodash": "^3.3.1",
+    "lodash": "^3.10.1",
     "mocha-lcov-reporter": "0.0.1",
     "moment": "^2.10.3",
     "mongodb": "^2.0.27",
@@ -51,24 +51,27 @@
     "jsdoc": "^3.3.0-beta1",
     "memdown": "^1.0.0",
     "mocha": "^1.18.2",
-    "sinon": "^1.10.3",
+    "proxyquire": "^1.7.2",
+    "sinon": "1.10.3",
     "supertest": "*",
     "tingodb": "^0.3.4"
   },
   "scripts": {
-    "start": "node bws.js",
+    "start": "./start.sh",
+    "stop": "./stop.sh",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "./node_modules/.bin/mocha",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
-  "contributors": [
-    {
-      "name": "Ivan Socolsky",
-      "email": "ivan@bitpay.com"
-    },
-    {
-      "name": "Matias Alejo Garcia",
-      "email": "ematiu@gmail.com"
-    }
-  ]
+  "bitcoreNode": "./bitcorenode",
+  "contributors": [{
+    "name": "Braydon Fuller",
+    "email": "braydon@bitpay.com"
+  }, {
+    "name": "Ivan Socolsky",
+    "email": "ivan@bitpay.com"
+  }, {
+    "name": "Matias Alejo Garcia",
+    "email": "ematiu@gmail.com"
+  }]
 }
