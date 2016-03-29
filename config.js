@@ -19,15 +19,15 @@ var config = {
 
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://localhost:27017/bws',
+      uri: 'mongodb://localhost:27017/cws',
     },
   },
   lockOpts: {
     //  To use locker-server, uncomment this:
-     lockerServer: {
-       host: 'localhost',
-       port: 3231,
-     },
+//     lockerServer: {
+//       host: 'localhost',
+//       port: 3231,
+//     },
   },
   messageBrokerOpts: {
     //  To use message broker server, uncomment this:
@@ -39,6 +39,7 @@ var config = {
     livenet: {
       provider: 'insight',
       url: 'http://localhost:3030',
+	  //url: 'https://creditsight.creditbit.org',
     },
     testnet: {
       provider: 'insight',
@@ -46,12 +47,12 @@ var config = {
     },
   },
   // To use email notifications uncomment this:
-   emailOpts: {
-     host: 'localhost',
-     port: 25,
-     ignoreTLS: true,
-     subjectPrefix: '[Wallet Service]',
-     from: 'wallet-service@creditbit.org',
-   },
+//   emailOpts: {
+//     host: 'localhost',
+//     port: 25,
+//     ignoreTLS: true,
+//     subjectPrefix: '[Wallet Service]',
+//     from: 'wallet-service@bitcore.io',
+//   },
 };
 module.exports = config;
